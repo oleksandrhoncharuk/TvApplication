@@ -20,7 +20,10 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(@ApplicationContext val context: Context): ViewModel() {
 
+    // To check how this work with multiple videos, change the list to videoNamesList
     private val videoNamesList = listOf(VIDEO_1_MP_4, VIDEO_2_MP_4, VIDEO_3_MP_4)
+    // To check how this work with one video, change the list to oneVideoList
+    private val oneVideoList = listOf(PANDA_VIDEO)
 
     private val libVLC: LibVLC by lazy {
         LibVLC(context)
@@ -30,11 +33,11 @@ class MainViewModel @Inject constructor(@ApplicationContext val context: Context
     }
 
     fun getVideoNamesList(): List<String> {
-        return listOf(VIDEO_1_MP_4, VIDEO_2_MP_4, VIDEO_3_MP_4)
+        return oneVideoList
     }
 
     fun setMedia(videoListIndex: Int) {
-        mediaPlayer.media = Media(libVLC, copyAssetToFile(videoNamesList[videoListIndex]).absolutePath).apply {
+        mediaPlayer.media = Media(libVLC, copyAssetToFile(oneVideoList[videoListIndex]).absolutePath).apply {
             addOption(":loop")
         }
     }
@@ -53,7 +56,7 @@ class MainViewModel @Inject constructor(@ApplicationContext val context: Context
     }
 
     // Function to copy asset file to local storage
-    fun copyAssetToFile(assetFileName: String): File {
+    private fun copyAssetToFile(assetFileName: String): File {
         val file = File(context.cacheDir, assetFileName)
 
         if (!file.exists()) {
@@ -80,7 +83,7 @@ class MainViewModel @Inject constructor(@ApplicationContext val context: Context
                 assetFileDescriptor.startOffset,
                 assetFileDescriptor.length
             )
-            return retriever.getFrameAtTime(Companion.SECOND)
+            return retriever.getFrameAtTime(SECOND)
         } catch (e: Exception) {
             e.printStackTrace()
             null
@@ -94,5 +97,6 @@ class MainViewModel @Inject constructor(@ApplicationContext val context: Context
         private const val VIDEO_1_MP_4 = "video1.mp4"
         private const val VIDEO_2_MP_4 = "video2.mp4"
         private const val VIDEO_3_MP_4 = "video3.mp4"
+        private const val PANDA_VIDEO = "Panda.mp4"
     }
 }
