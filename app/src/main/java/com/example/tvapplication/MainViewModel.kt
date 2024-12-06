@@ -33,11 +33,11 @@ class MainViewModel @Inject constructor(@ApplicationContext val context: Context
     }
 
     fun getVideoNamesList(): List<String> {
-        return oneVideoList
+        return videoNamesList
     }
 
     fun setMedia(videoListIndex: Int) {
-        mediaPlayer.media = Media(libVLC, copyAssetToFile(oneVideoList[videoListIndex]).absolutePath).apply {
+        mediaPlayer.media = Media(libVLC, copyAssetToFile(videoNamesList[videoListIndex]).absolutePath).apply {
             addOption(":loop")
         }
     }

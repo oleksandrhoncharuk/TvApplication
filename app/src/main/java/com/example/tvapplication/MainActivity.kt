@@ -3,7 +3,6 @@ package com.example.tvapplication
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,7 +22,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -43,11 +44,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat.getString
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavType
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import com.example.tvapplication.ui.theme.TVApplicationTheme
@@ -60,43 +61,46 @@ private const val HOME_ROUTE = "home"
 private const val VIDEO_PLAYER_ROUTE = "videoPlayer/"
 private const val VIDEO_PATH = "videoPath"
 
+val LocalNavController = compositionLocalOf<NavController?> { null }
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val navController = rememberNavController()
-
             TVApplicationTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    var currentIndex by remember { mutableIntStateOf(0) }
-                    val videoNamesList = viewModel.getVideoNamesList()
+                TVApp()
+            }
+        }
+    }
+}
 
-                    NavHost(navController, startDestination = HOME_ROUTE) {
-                        composable(HOME_ROUTE) {
-                            HomePage(videos = videoNamesList) { videoPath ->
-                                // Navigate to video player screen with the video path
-                                navController.navigate("$VIDEO_PLAYER_ROUTE$videoPath")
-                            }
-                        }
-                        composable(
-                            "$VIDEO_PLAYER_ROUTE{$VIDEO_PATH}",
-                            arguments = listOf(navArgument(VIDEO_PATH) {
-                                type = NavType.StringType
-                            })
-                        ) { backStackEntry ->
-                            val videoPath = backStackEntry.arguments?.getString(VIDEO_PATH)
-                                ?: return@composable
-                            // Find the index of the selected video
-                            currentIndex = videoNamesList.indexOf(videoPath)
+@Composable
+fun TVApp() {
+    Surface(modifier = Modifier.fillMaxSize()) {
+        val viewModel: MainViewModel = viewModel()
+        val navController = rememberNavController()
+        var currentIndex by remember { mutableIntStateOf(0) }
+        val videoNamesList = viewModel.getVideoNamesList()
 
-                            // Pass the list of videos to the VideoPlayer composable
-                            VideoPlayer(playingIndex = currentIndex)
-                        }
+        CompositionLocalProvider(LocalNavController provides navController) {
+            // Set up the NavHost with two screens: Home and Details
+            NavHost(navController = navController, startDestination = HOME_ROUTE) {
+                composable(HOME_ROUTE) {
+                    HomePage(videos = videoNamesList) { videoPath ->
+                        // Navigate to video player screen with the video path
+                        navController.navigate("$VIDEO_PLAYER_ROUTE$videoPath")
                     }
+                }
+                composable("$VIDEO_PLAYER_ROUTE{$VIDEO_PATH}") { backStackEntry ->
+                    val videoPath = backStackEntry.arguments?.getString(VIDEO_PATH)
+                        ?: return@composable
+                    // Find the index of the selected video
+                    currentIndex = videoNamesList.indexOf(videoPath)
+
+                    // Pass the list of videos to the VideoPlayer composable
+                    VideoPlayer(playingIndex = currentIndex)
                 }
             }
         }
